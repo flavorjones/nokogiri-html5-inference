@@ -52,6 +52,7 @@ describe Nokogiri::HTML5::Inference do
         it "returns '#{context}'" do
           fragments.each do |fragment|
             actual = Nokogiri::HTML5::Inference.context(fragment)
+
             assert_equal(context, actual, "   Given: #{fragment.inspect}")
           end
         end
@@ -91,8 +92,28 @@ describe Nokogiri::HTML5::Inference do
         fragments.each do |fragment|
           it "parses '#{fragment}' correctly" do
             actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
             assert_equal(fragment, actual)
           end
+        end
+      end
+    end
+
+    describe "multiple children that need plucking" do
+      it "parses correctly" do
+        fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
+        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
+        assert_equal(fragment, actual)
+      end
+
+      describe "with pluck: false" do
+        it "includes the intermediate nodes created" do
+          fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
+          expected = "<tbody>#{fragment}</tbody>"
+          actual = Nokogiri::HTML5::Inference.parse(fragment, pluck: false).to_html
+
+          assert_equal(expected, actual)
         end
       end
     end
