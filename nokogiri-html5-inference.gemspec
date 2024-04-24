@@ -4,7 +4,7 @@ require_relative "lib/nokogiri/html5/inference/version"
 
 Gem::Specification.new do |spec|
   spec.name = "nokogiri-html5-inference"
-  spec.version = Nokogiri::Html5::Inference::VERSION
+  spec.version = Nokogiri::HTML5::Inference::VERSION
   spec.authors = ["Mike Dalessio"]
   spec.email = ["mike.dalessio@gmail.com"]
 

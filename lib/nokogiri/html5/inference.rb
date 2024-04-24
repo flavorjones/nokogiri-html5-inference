@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 require_relative "inference/version"
+
 require "nokogiri"
 
-if defined?(Nokogiri::HTML5::Inference)
+if defined?(Nokogiri::HTML5::Inference) && Nokogiri::HTML5::Inference.respond_to?(:parse)
   # keep option open of merging into Nokogiri some day
   warn "NOTE: nokogiri-html5-inference is already loaded. Check for pinned issues at https://github.com/flavorjones/nokogiri-html5-inference/issues for more information."
 else
