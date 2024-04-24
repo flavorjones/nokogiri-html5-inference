@@ -12,58 +12,59 @@ else
     module HTML5
       # :markup: markdown
       #
-      # The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
-      # context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
-      # without knowing the parent node -- also called the "context node" -- in which it will be inserted.
+      #  The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
+      #  context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
+      #  without knowing the parent node -- also called the "context node" -- in which it will be inserted.
       #
-      # Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
-      # ["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
-      # but there are some notable exceptions. Perhaps the most problematic to web developers are the
-      # table-related tags, which will not be parsed properly unless the parser is in the
-      # ["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
+      #  Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
+      #  ["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
+      #  but there are some notable exceptions. Perhaps the most problematic to web developers are the
+      #  table-related tags, which will not be parsed properly unless the parser is in the
+      #  ["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
       #
-      # For example:
+      #  For example:
       #
-      # ``` ruby
-      # Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
-      # # => "foo"
-      # ```
+      #  ``` ruby
+      #  Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
+      #  # => "foo" # where did the tag go!?
+      #  ```
       #
-      # In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
-      # and drop the tag. This fragment must be parsed "in the context" of a table in order to parse
-      # properly. Thankfully, libgumbo and Nokogiri allow us to do this:
+      #  In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
+      #  and drop the tag. This particular fragment must be parsed "in the context" of a table in order to
+      #  parse properly.
       #
-      # ``` ruby
-      # Nokogiri::HTML5::DocumentFragment.new(
-      #   Nokogiri::HTML5::Document.new,
-      #   "<td>foo</td>",
-      #   "table"  # this is the context node
-      # ).to_html
-      # # => "<tbody><tr><td>foo</td></tr></tbody>"
-      # ```
+      #  Thankfully, libgumbo and Nokogiri allow us to set the context node:
       #
-      # This is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
-      # _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
-      # the `<td>` tag must be wrapped in `<tbody><tr>` tags.
+      #  ``` ruby
+      #  Nokogiri::HTML5::DocumentFragment.new(
+      #    Nokogiri::HTML5::Document.new,
+      #    "<td>foo</td>",
+      #    "table"  # <--- this is the context node
+      #  ).to_html
+      #  # => "<tbody><tr><td>foo</td></tr></tbody>"
+      #  ```
       #
-      # We can narrow down the result set with an XPath query to get back only the intended tags:
+      #  This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
+      #  _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
+      #  the `<td>` tag must be wrapped in `<tbody><tr>` tags.
       #
-      # ``` ruby
-      # Nokogiri::HTML5::DocumentFragment.new(
-      #   Nokogiri::HTML5::Document.new,
-      #   "<td>foo</td>",
-      #   "table"  # this is the context node
-      # ).xpath("tbody/tr/*").to_html
-      # # => "<td>foo</td>"
-      # ```
+      #  We can narrow down the result set with an XPath query to get back only the intended tags:
       #
-      # Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does:
+      #  ``` ruby
+      #  Nokogiri::HTML5::DocumentFragment.new(
+      #    Nokogiri::HTML5::Document.new,
+      #    "<td>foo</td>",
+      #    "table"  # this is the context node
+      #  ).xpath("tbody/tr/*").to_html
+      #  # => "<td>foo</td>"
+      #  ```
       #
-      # ``` ruby
-      # Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
-      # # => "<td>foo</td>"
-      # ```
+      #  Huzzah! That works. And it's precisely what Nokogiri::HTML5::Inference.parse does:
       #
+      #  ``` ruby
+      #  Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
+      #  # => "<td>foo</td>"
+      #  ```
       module Inference
         # Tags that must be parsed in a specific HTML5 insertion mode, for which we must use a
         # context node.

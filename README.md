@@ -23,23 +23,25 @@ For example:
 
 ``` ruby
 Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
-# => "foo"
+# => "foo" # where did the tag go!?
 ```
 
 In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
-and drop the tag. This fragment must be parsed "in the context" of a table in order to parse
-properly. Thankfully, libgumbo and Nokogiri allow us to do this:
+and drop the tag. This particular fragment must be parsed "in the context" of a table in order to
+parse properly.
+
+Thankfully, libgumbo and Nokogiri allow us to set the context node:
 
 ``` ruby
 Nokogiri::HTML5::DocumentFragment.new(
   Nokogiri::HTML5::Document.new,
   "<td>foo</td>",
-  "table"  # this is the context node
+  "table"  # <--- this is the context node
 ).to_html
 # => "<tbody><tr><td>foo</td></tr></tbody>"
 ```
 
-This is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
+This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
 _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
 the `<td>` tag must be wrapped in `<tbody><tr>` tags.
 
@@ -54,7 +56,7 @@ Nokogiri::HTML5::DocumentFragment.new(
 # => "<td>foo</td>"
 ```
 
-Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does:
+Huzzah! That works. And it's precisely what Nokogiri::HTML5::Inference.parse does:
 
 ``` ruby
 Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
