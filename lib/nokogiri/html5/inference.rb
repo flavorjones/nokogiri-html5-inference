@@ -57,9 +57,12 @@ else
       # # => "<td>foo</td>"
       # ```
       #
-      # Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does: make reasonable inferences
-      # that work for both HTML5 documents and HTML5 fragments, and for all the different HTML5 tags that a
-      # web developer might need in a view library.
+      # Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does:
+      #
+      # ``` ruby
+      # Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
+      # # => "<td>foo</td>"
+      # ```
       #
       module Inference
         # Tags that must be parsed in a specific HTML5 insertion mode, for which we must use a

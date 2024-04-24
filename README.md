@@ -73,7 +73,7 @@ html = <<~HTML
   <!doctype html>
   <html lang="en">
     <head>
-      <meta encoding="UTF-8">
+      <meta charset="utf-8">
     </head>
     <body>
       <h1>Hello, world!</h1>
