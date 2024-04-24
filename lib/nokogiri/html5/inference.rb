@@ -159,7 +159,6 @@ else
             else "body"
             end
           end
-          protected :context
 
           #
           #  call-seq: pluck_path(input) => (String | nil)
@@ -185,7 +184,6 @@ else
             when PluckRegexp::BODY_OUTER then "body"
             end
           end
-          protected :pluck_path
         end
       end
     end
