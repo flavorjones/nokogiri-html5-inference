@@ -2,7 +2,10 @@
 
 Given HTML5 input, make a reasonable guess at how to parse it correctly.
 
-Infer from the HTML5 input whether it's a fragment or a document, and if it's a fragment what the proper context node should be. This is useful for parsing trusted content like view snippets, particularly for morphing cases like StimulusReflex.
+Nokogiri::HTML5::Inference makes reasonable inferences that work for both HTML5 documents and HTML5
+fragments, and for all the different HTML5 tags that a web developer might need in a view library.
+
+This is useful for parsing trusted content like view snippets, particularly for morphing cases like StimulusReflex.
 
 ## The problem this library solves
 
@@ -51,9 +54,12 @@ Nokogiri::HTML5::DocumentFragment.new(
 # => "<td>foo</td>"
 ```
 
-Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does: make reasonable inferences
-that work for both HTML5 documents and HTML5 fragments, and for all the different HTML5 tags that a
-web developer might need in a view library.
+Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does:
+
+``` ruby
+Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
+# => "<td>foo</td>"
+```
 
 
 ## Usage
@@ -130,6 +136,8 @@ The implementation is currently pretty hacky and only looks at the first tag in 
 decisions. Nonetheless, it is a step forward from what Nokogiri and libgumbo do out-of-the-box.
 
 The implementation also is almost certainly incomplete, meaning there are HTML5 tags that aren't handled by this library as you might expect.
+
+This implementation is probably OK for handling untrusted content, but it's still new and I haven't really thought very hard about it yet. If you want to use it on untrusted content, open an issue and talk with us about your use case so we can help keep you secure!
 
 We would welcome bug reports and pull requests improving this library!
 
