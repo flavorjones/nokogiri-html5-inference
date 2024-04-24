@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Mike Dalessio"]
   spec.email = ["mike.dalessio@gmail.com"]
 
-  spec.summary = "Given HTML5 input, make a resonable guess at how to parse it correctly."
+  spec.summary = "Given HTML5 input, make a reasonable guess at how to parse it correctly."
   spec.description = <<~DESC
     Infer from the HTML5 input whether it's a fragment or a document, and if it's a fragment what
     the proper context node should be. This is useful for parsing trusted content like view
@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   spec.files = [
+    ".rdoc_options",
     "CHANGELOG.md",
     "CODE_OF_CONDUCT.md",
     "LICENSE.txt",

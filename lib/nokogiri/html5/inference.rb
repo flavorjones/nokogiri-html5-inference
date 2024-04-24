@@ -10,25 +10,82 @@ if defined?(Nokogiri::HTML5::Inference) && Nokogiri::HTML5::Inference.respond_to
 else
   module Nokogiri
     module HTML5
+      # :markup: markdown
+      #
+      # The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
+      # context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
+      # without knowing the parent node -- also called the "context node" -- in which it will be inserted.
+      #
+      # Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
+      # ["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
+      # but there are some notable exceptions. Perhaps the most problematic to web developers are the
+      # table-related tags, which will not be parsed properly unless the parser is in the
+      # ["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
+      #
+      # For example:
+      #
+      # ``` ruby
+      # Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
+      # # => "foo"
+      # ```
+      #
+      # In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
+      # and drop the tag. This fragment must be parsed "in the context" of a table in order to parse
+      # properly. Thankfully, libgumbo and Nokogiri allow us to do this:
+      #
+      # ``` ruby
+      # Nokogiri::HTML5::DocumentFragment.new(
+      #   Nokogiri::HTML5::Document.new,
+      #   "<td>foo</td>",
+      #   "table"  # this is the context node
+      # ).to_html
+      # # => "<tbody><tr><td>foo</td></tr></tbody>"
+      # ```
+      #
+      # This is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
+      # _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
+      # the `<td>` tag must be wrapped in `<tbody><tr>` tags.
+      #
+      # We can narrow down the result set with an XPath query to get back only the intended tags:
+      #
+      # ``` ruby
+      # Nokogiri::HTML5::DocumentFragment.new(
+      #   Nokogiri::HTML5::Document.new,
+      #   "<td>foo</td>",
+      #   "table"  # this is the context node
+      # ).xpath("tbody/tr/*").to_html
+      # # => "<td>foo</td>"
+      # ```
+      #
+      # Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does: make reasonable inferences
+      # that work for both HTML5 documents and HTML5 fragments, and for all the different HTML5 tags that a
+      # web developer might need in a view library.
+      #
       module Inference
-        module ContextTags
+        # Tags that must be parsed in a specific HTML5 insertion mode, for which we must use a
+        # context node.
+        module ContextTags # :nodoc:
           TABLE = %w[thead tbody tfoot tr td th col colgroup caption].freeze
           HTML = %w[head body].freeze
         end
 
-        module ContextRegexp
+        # Regular expressions used to determine if we need to use a context node.
+        module ContextRegexp # :nodoc:
           DOCUMENT = /\A\s*(<!doctype\s+html\b|<html\b)/i
           TABLE = /\A\s*<(#{ContextTags::TABLE.join("|")})\b/i
           HTML = /\A\s*<(#{ContextTags::HTML.join("|")})\b/i
         end
 
-        module PluckTags
+        # Tags that get an intermediate parent created for them according to the HTML5 spec.
+        module PluckTags # :nodoc:
           TBODY = %w[tr].freeze
           TBODY_TR = %w[td th].freeze
           COLGROUP = %w[col].freeze
         end
 
-        module PluckRegexp
+        # Regular expressions used to determine if we will need to skip an intermediate parent or
+        # otherwise narrow the fragment DOM that is returned.
+        module PluckRegexp # :nodoc:
           TBODY = /\A\s*<(#{PluckTags::TBODY.join("|")})\b/i
           TBODY_TR = /\A\s*<(#{PluckTags::TBODY_TR.join("|")})\b/i
           COLGROUP = /\A\s*<(#{PluckTags::COLGROUP.join("|")})\b/i
@@ -37,25 +94,35 @@ else
         end
 
         class << self
-          def context(input)
-            case input
-            when ContextRegexp::DOCUMENT then nil
-            when ContextRegexp::TABLE then "table"
-            when ContextRegexp::HTML then "html"
-            else "body"
-            end
-          end
-
-          def pluck_path(input)
-            case input
-            when PluckRegexp::TBODY then "tbody/*"
-            when PluckRegexp::TBODY_TR then "tbody/tr/*"
-            when PluckRegexp::COLGROUP then "colgroup/*"
-            when PluckRegexp::HEAD_OUTER then "head"
-            when PluckRegexp::BODY_OUTER then "body"
-            end
-          end
-
+          #
+          #  call-seq:
+          #    parse(input, pluck: true) => (Nokogiri::HTML5::Document | Nokogiri::HTML5::DocumentFragment | Nokogiri::XML::NodeSet)
+          #
+          #  Based on the start of the input HTML5 string, guess whether it's a full document or a
+          #  fragment and, using the fragment context node if necessary, parse it properly and
+          #  return the correct set of nodes.
+          #
+          #  The keyword parameter +pluck+ can be set to +false+ to disable the narrowing of a
+          #  parsed fragment to omit any intermediate parent nodes. This "plucking" is necessary,
+          #  for example, when the input fragment begins with "<td>", which the HTML5 spec requires
+          #  to be wrapped in <tt><tbody><tr>...</tr></tbody></tt> tags. By default, this method
+          #  will return only the children of <tt><tbody><tr></tt>, but setting this flag to +false+
+          #  will return the +tbody+ tag and its children.
+          #
+          #  [Parameters]
+          #  - +input+ (String) The input HTML5 string, which may represent a document or a fragment.
+          #
+          #  [Keyword Parameters]
+          #  - +pluck+ (Boolean) Default: +true+. Set to +false+ if you want the method to always
+          #    return <tt>DocumentFragment</tt>s as-parsed, without attempting to remove
+          #    intermediate parent nodes. This shouldn't be necessary if the library is working
+          #    properly, but may be useful to allow user to work around a bad guess.
+          #
+          #  [Returns]
+          #  - A +Nokogiri::HTML5::Document+ if the input appears to represent a full document.
+          #  - A +Nokogiri::HTML5::DocumentFragment+ or a +Nokogiri::XML::NodeSet+ if the input
+          #    appears to be a fragment.
+          #
           def parse(input, pluck: true)
             context = Nokogiri::HTML5::Inference.context(input)
             if context.nil?
@@ -69,6 +136,56 @@ else
               end
             end
           end
+
+          #
+          #  call-seq: context(input) => (String | nil)
+          #
+          #  Based on the start of the input HTML5 string, make a guess about whether it's a full
+          #  document or a document fragment; and if it's a fragment, whether we need to parse it
+          #  within a specific context node.
+          #
+          #  [Parameters]
+          #  - +input+ (String) The input HTML5 string, which may represent a document or a fragment.
+          #
+          #  [Returns]
+          #    The String name of the context node required to parse the fragment, or +nil+ if the
+          #    input represents a full document.
+          #
+          def context(input) # :nodoc:
+            case input
+            when ContextRegexp::DOCUMENT then nil
+            when ContextRegexp::TABLE then "table"
+            when ContextRegexp::HTML then "html"
+            else "body"
+            end
+          end
+          protected :context
+
+          #
+          #  call-seq: pluck_path(input) => (String | nil)
+          #
+          #  Based on the start of the input HTML5 fragment string, determine whether the fragment
+          #  will need to be selected out of a parent node. This is necessary, for example, when the
+          #  fragment begins with "<td>", a tag which the HTML5 spec requires to be wrapped in
+          #  "<tbody><tr>...</tr></tbody>".
+          #
+          #  [Parameters]
+          #  - +input+ (String) The input HTML5 string, which should represent a fragment (not a full document).
+          #
+          #  [Returns]
+          #    The String XPath query of the context node required to parse the fragment, or +nil+
+          #    if no plucking is necessary.
+          #
+          def pluck_path(input) # :nodoc:
+            case input
+            when PluckRegexp::TBODY then "tbody/*"
+            when PluckRegexp::TBODY_TR then "tbody/tr/*"
+            when PluckRegexp::COLGROUP then "colgroup/*"
+            when PluckRegexp::HEAD_OUTER then "head"
+            when PluckRegexp::BODY_OUTER then "body"
+            end
+          end
+          protected :pluck_path
         end
       end
     end

@@ -1,13 +1,140 @@
 # Nokogiri::Html5::Inference
 
-Given HTML5 input, make a resonable guess at how to parse it correctly.
+Given HTML5 input, make a reasonable guess at how to parse it correctly.
 
 Infer from the HTML5 input whether it's a fragment or a document, and if it's a fragment what the proper context node should be. This is useful for parsing trusted content like view snippets, particularly for morphing cases like StimulusReflex.
 
+## The problem this library solves
+
+The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
+context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
+without knowing the parent node -- also called the "context node" -- in which it will be inserted.
+
+Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
+["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
+but there are some notable exceptions. Perhaps the most problematic to web developers are the
+table-related tags, which will not be parsed properly unless the parser is in the
+["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
+
+For example:
+
+``` ruby
+Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
+# => "foo"
+```
+
+In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
+and drop the tag. This fragment must be parsed "in the context" of a table in order to parse
+properly. Thankfully, libgumbo and Nokogiri allow us to do this:
+
+``` ruby
+Nokogiri::HTML5::DocumentFragment.new(
+  Nokogiri::HTML5::Document.new,
+  "<td>foo</td>",
+  "table"  # this is the context node
+).to_html
+# => "<tbody><tr><td>foo</td></tr></tbody>"
+```
+
+This is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
+_intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
+the `<td>` tag must be wrapped in `<tbody><tr>` tags.
+
+We can narrow down the result set with an XPath query to get back only the intended tags:
+
+``` ruby
+Nokogiri::HTML5::DocumentFragment.new(
+  Nokogiri::HTML5::Document.new,
+  "<td>foo</td>",
+  "table"  # this is the context node
+).xpath("tbody/tr/*").to_html
+# => "<td>foo</td>"
+```
+
+Hurrah! This is precisely what Nokogiri::HTML5::Inference.parse does: make reasonable inferences
+that work for both HTML5 documents and HTML5 fragments, and for all the different HTML5 tags that a
+web developer might need in a view library.
+
+
+## Usage
+
+Given an input String containing HTML5, infer the best way to parse it by calling `Nokogiri::HTML5::Inference.parse`.
+
+If the input is a document, you'll get a Nokogiri::HTML5::Document back:
+
+``` ruby
+html = <<~HTML
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta encoding="UTF-8">
+    </head>
+    <body>
+      <h1>Hello, world!</h1>
+    </body>
+  </html>
+HTML
+
+Nokogiri::HTML5::Inference.parse(html)
+# => #(Document:0x1f04 {
+#      name = "document",
+#      children = [
+#        #(DTD:0x2030 { name = "html" }),
+#        #(Element:0x2134 {
+#          name = "html",
+#          attribute_nodes = [ #(Attr:0x2260 { name = "lang", value = "en" })],
+#    ...
+#    #(Element:0x2a44 {
+#              name = "body",
+#              children = [
+#                #(Text "\n    "),
+#                #(Element:0x2bd4 { name = "h1", children = [ #(Text "Hello, world!")] }),
+#                #(Text "\n  \n\n")]
+#              })]
+#          })]
+#      })
+```
+
+If the input is a fragment that is parsed normally, you'll either get a Nokogiri::HTML5::DocumentFragment back:
+
+``` ruby
+Nokogiri::HTML5::Inference.parse("<div>hello,</div><div>world!</div>")
+# => #(DocumentFragment:0x34f8 {
+#      name = "#document-fragment",
+#      children = [
+#        #(Element:0x3624 { name = "div", children = [ #(Text "hello,")] }),
+#        #(Element:0x3804 { name = "div", children = [ #(Text "world!")] })]
+#      })
+```
+
+or, if there are intermediate parent tags that need to be removed, you'll get a Nokogiri::XML::NodeSet:
+
+``` ruby
+Nokogiri::HTML5::Inference.parse("<tr><td>hello</td><td>world!</td></tr>")
+# => [
+#     #<Nokogiri::XML::Element:0x4074 name="tr"
+#       children=[
+#         #<Nokogiri::XML::Element:0x4038 name="td" children=[#<Nokogiri::XML::Text:0x4024 "hello">]>,
+#         #<Nokogiri::XML::Element:0x4060 name="td" children=[#<Nokogiri::XML::Text:0x404c "world!">]>
+#       ]>
+#    ]
+```
+
+All of these return types respond to the same query methods like `#css` and `#xpath`, tree-traversal
+methods like `#children`, and serialization methods like `#to_html`.
+
+
+## Caveats
+
+The implementation is currently pretty hacky and only looks at the first tag in the input to make
+decisions. Nonetheless, it is a step forward from what Nokogiri and libgumbo do out-of-the-box.
+
+The implementation also is almost certainly incomplete, meaning there are HTML5 tags that aren't handled by this library as you might expect.
+
+We would welcome bug reports and pull requests improving this library!
+
 
 ## Installation
-
-TODO: Replace `nokgiri-html5-inference` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
 
 Install the gem and add to the application's Gemfile by executing:
 
@@ -16,11 +143,6 @@ Install the gem and add to the application's Gemfile by executing:
 If bundler is not being used to manage dependencies, install the gem by executing:
 
     $ gem install nokgiri-html5-inference
-
-
-## Usage
-
-TODO: Write usage instructions here
 
 
 ## Development
