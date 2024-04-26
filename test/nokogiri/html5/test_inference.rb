@@ -99,6 +99,25 @@ describe Nokogiri::HTML5::Inference do
       end
     end
 
+    describe "passed a Fragment containing head and body" do
+      it "returns a Fragment containing both head and body" do
+        fragment = "<head></head><body></body>"
+        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
+        assert_equal(fragment, actual)
+      end
+    end
+
+    describe "passed a Fragment containing head and p" do
+      it "returns a Fragment containing both head and body" do
+        fragment = "<head><p>"
+        expected = "<head></head><body><p></p></body>"
+        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
+        assert_equal(expected, actual)
+      end
+    end
+
     describe "multiple children that need plucking" do
       it "parses correctly" do
         fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
