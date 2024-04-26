@@ -26,7 +26,7 @@ describe Nokogiri::HTML5::Inference do
     ],
     "html" => [
       "<body><div>hello</div></body>",
-      "<head><meta charset=\"UTF-8\"><title>hello</title></head>"
+      "<head><meta charset=\"UTF-8\"><title>hello</title></head><body><div>hello</div></body>"
     ]
   }
 
@@ -96,6 +96,25 @@ describe Nokogiri::HTML5::Inference do
             assert_equal(fragment, actual)
           end
         end
+      end
+    end
+
+    describe "passed a Fragment containing head and body" do
+      it "returns a Fragment containing both head and body" do
+        fragment = "<head></head><body></body>"
+        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
+        assert_equal(fragment, actual)
+      end
+    end
+
+    describe "passed a Fragment containing head and p" do
+      it "returns a Fragment containing both head and body" do
+        fragment = "<head><p>"
+        expected = "<head></head><body><p></p></body>"
+        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+
+        assert_equal(expected, actual)
       end
     end
 
