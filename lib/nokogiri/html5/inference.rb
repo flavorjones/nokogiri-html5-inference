@@ -93,7 +93,7 @@ else
           TBODY = /\A\s*<(#{PluckTags::TBODY.join("|")})\b/i
           TBODY_TR = /\A\s*<(#{PluckTags::TBODY_TR.join("|")})\b/i
           COLGROUP = /\A\s*<(#{PluckTags::COLGROUP.join("|")})\b/i
-          HEAD_OUTER = /\A\s*<(head)\b/i
+          HTML_INNER = /\A\s*<(head)\b/i
           BODY_OUTER = /\A\s*<(body)\b/i
         end
 
@@ -184,7 +184,7 @@ else
             when PluckRegexp::TBODY then "tbody/*"
             when PluckRegexp::TBODY_TR then "tbody/tr/*"
             when PluckRegexp::COLGROUP then "colgroup/*"
-            when PluckRegexp::HEAD_OUTER then "head"
+            when PluckRegexp::HTML_INNER then "./*"
             when PluckRegexp::BODY_OUTER then "body"
             end
           end

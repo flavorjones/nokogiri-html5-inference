@@ -26,7 +26,7 @@ describe Nokogiri::HTML5::Inference do
     ],
     "html" => [
       "<body><div>hello</div></body>",
-      "<head><meta charset=\"UTF-8\"><title>hello</title></head>"
+      "<head><meta charset=\"UTF-8\"><title>hello</title></head><body><div>hello</div></body>"
     ]
   }
 
