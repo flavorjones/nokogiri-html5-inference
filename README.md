@@ -1,8 +1,8 @@
-# Nokogiri::Html5::Inference
+# Nokogiri::HTML5::Inference
 
 Given HTML5 input, make a reasonable guess at how to parse it correctly.
 
-Nokogiri::HTML5::Inference makes reasonable inferences that work for both HTML5 documents and HTML5
+`Nokogiri::HTML5::Inference` makes reasonable inferences that work for both HTML5 documents and HTML5
 fragments, and for all the different HTML5 tags that a web developer might need in a view library.
 
 This is useful for parsing trusted content like view snippets, particularly for morphing cases like StimulusReflex.
@@ -56,7 +56,7 @@ Nokogiri::HTML5::DocumentFragment.new(
 # => "<td>foo</td>"
 ```
 
-Huzzah! That works. And it's precisely what Nokogiri::HTML5::Inference.parse does:
+Huzzah! That works. And it's precisely what `Nokogiri::HTML5::Inference.parse` does:
 
 ``` ruby
 Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
@@ -68,7 +68,7 @@ Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
 
 Given an input String containing HTML5, infer the best way to parse it by calling `Nokogiri::HTML5::Inference.parse`.
 
-If the input is a document, you'll get a Nokogiri::HTML5::Document back:
+If the input is a document, you'll get a `Nokogiri::HTML5::Document` back:
 
 ``` ruby
 html = <<~HTML
@@ -103,7 +103,7 @@ Nokogiri::HTML5::Inference.parse(html)
 #      })
 ```
 
-If the input is a fragment that is parsed normally, you'll either get a Nokogiri::HTML5::DocumentFragment back:
+If the input is a fragment that is parsed normally, you'll either get a `Nokogiri::HTML5::DocumentFragment` back:
 
 ``` ruby
 Nokogiri::HTML5::Inference.parse("<div>hello,</div><div>world!</div>")
@@ -115,7 +115,7 @@ Nokogiri::HTML5::Inference.parse("<div>hello,</div><div>world!</div>")
 #      })
 ```
 
-or, if there are intermediate parent tags that need to be removed, you'll get a Nokogiri::XML::NodeSet:
+or, if there are intermediate parent tags that need to be removed, you'll get a `Nokogiri::XML::NodeSet`:
 
 ``` ruby
 Nokogiri::HTML5::Inference.parse("<tr><td>hello</td><td>world!</td></tr>")
@@ -148,12 +148,15 @@ We would welcome bug reports and pull requests improving this library!
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add nokgiri-html5-inference
+```bash
+bundle add nokgiri-html5-inference
+```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install nokgiri-html5-inference
-
+```bash
+gem install nokgiri-html5-inference
+```
 
 ## Development
 
@@ -174,4 +177,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the Nokogiri::Html5::Inference project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/flavorjones/nokogiri-html5-inference/blob/main/CODE_OF_CONDUCT.md).
+Everyone interacting in the `Nokogiri::HTML5::Inference` project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/flavorjones/nokogiri-html5-inference/blob/main/CODE_OF_CONDUCT.md).
