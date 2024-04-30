@@ -45,14 +45,14 @@ This result is _almost_ correct, but we're seeing another HTML5 parsing rule in 
 _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
 the `<td>` tag must be wrapped in `<tbody><tr>` tags.
 
-We can narrow down the result set with an XPath query to get back only the intended tags:
+We can fix this to only return the tags we provided by using the `<template>` tag as the context node, which the HTML5 spec provides exactly for this purpose:
 
 ``` ruby
 Nokogiri::HTML5::DocumentFragment.new(
   Nokogiri::HTML5::Document.new,
   "<td>foo</td>",
-  "table"  # this is the context node
-).xpath("tbody/tr/*").to_html
+  "template"  # <--- this is the context node
+).to_html
 # => "<td>foo</td>"
 ```
 
