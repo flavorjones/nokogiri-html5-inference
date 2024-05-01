@@ -12,15 +12,18 @@ else
     module HTML5
       # :markup: markdown
       #
-      #  The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
-      #  context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
-      #  without knowing the parent node -- also called the "context node" -- in which it will be inserted.
+      #  The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very
+      #  precise context-dependent parsing rules which can make it challenging to "just parse" a
+      #  fragment of HTML without knowing the parent node -- also called the "context node" -- in
+      #  which it will be inserted.
       #
       #  Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
-      #  ["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
-      #  but there are some notable exceptions. Perhaps the most problematic to web developers are the
-      #  table-related tags, which will not be parsed properly unless the parser is in the
-      #  ["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
+      #  ["in body" insertion
+      #  mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody), but there
+      #  are some notable exceptions. Perhaps the most problematic to web developers are the
+      #  table-related tags, which will not be parsed properly unless the parser is in the ["in
+      #  table" insertion
+      #  mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
       #
       #  For example:
       #
@@ -29,9 +32,9 @@ else
       #  # => "foo" # where did the tag go!?
       #  ```
       #
-      #  In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
-      #  and drop the tag. This particular fragment must be parsed "in the context" of a table in order to
-      #  parse properly.
+      #  In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed
+      #  here", and drop the tag. This particular fragment must be parsed "in the context" of a
+      #  table in order to parse properly.
       #
       #  Thankfully, libgumbo and Nokogiri allow us to set the context node:
       #
@@ -44,11 +47,12 @@ else
       #  # => "<tbody><tr><td>foo</td></tr></tbody>"
       #  ```
       #
-      #  This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
-      #  _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
-      #  the `<td>` tag must be wrapped in `<tbody><tr>` tags.
+      #  This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action:
+      #  there may be _intermediate parent tags_ that the HTML5 spec requires to be inserted by the
+      #  parser. In this case, the `<td>` tag must be wrapped in `<tbody><tr>` tags.
       #
-      #  We can fix this to only return the tags we provided by using the `<template>` tag as the context node, which the HTML5 spec provides exactly for this purpose:
+      #  We can fix this to only return the tags we provided by using the `<template>` tag as the
+      #  context node, which the HTML5 spec provides exactly for this purpose:
       #
       #  ``` ruby
       #  Nokogiri::HTML5::DocumentFragment.new(
@@ -59,7 +63,7 @@ else
       #  # => "<td>foo</td>"
       #  ```
       #
-      #  Huzzah! That works. And it's precisely what Nokogiri::HTML5::Inference.parse does:
+      #  Huzzah! That works. And it's precisely what `Nokogiri::HTML5::Inference.parse` does:
       #
       #  ``` ruby
       #  Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
@@ -88,7 +92,7 @@ else
         class << self
           #
           #  call-seq:
-          #    parse(input, pluck: true) => (Nokogiri::HTML5::Document | Nokogiri::HTML5::DocumentFragment | Nokogiri::XML::NodeSet)
+          #    parse(input, pluck: true) => (Nokogiri::HTML5::Document | Nokogiri::XML::NodeSet)
           #
           #  Based on the start of the input HTML5 string, guess whether it's a full document or a
           #  fragment and, using the fragment context node if necessary, parse it properly and
@@ -112,8 +116,7 @@ else
           #
           #  [Returns]
           #  - A +Nokogiri::HTML5::Document+ if the input appears to represent a full document.
-          #  - A +Nokogiri::HTML5::DocumentFragment+ or a +Nokogiri::XML::NodeSet+ if the input
-          #    appears to be a fragment.
+          #  - A +Nokogiri::XML::NodeSet+ if the input appears to be a fragment.
           #
           def parse(input, pluck: true)
             context = Nokogiri::HTML5::Inference.context(input)
@@ -124,7 +127,7 @@ else
               if pluck && (path = pluck_path(input))
                 fragment.xpath(path)
               else
-                fragment
+                fragment.children
               end
             end
           end

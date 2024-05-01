@@ -61,27 +61,29 @@ describe Nokogiri::HTML5::Inference do
   describe ".parse" do
     describe "passed a Document with doctype" do
       it "returns a Document" do
-        assert_equal(
-          "<!DOCTYPE html><html><head></head><body></body></html>",
-          Nokogiri::HTML5::Inference.parse("<!doctype html><html><head></head><body></body></html>").to_html
-        )
-        assert_equal(
-          "<!DOCTYPE html><html><head></head><body></body></html>",
-          Nokogiri::HTML5::Inference.parse("<!DOCTYPE HTML><HTML><HEAD></HEAD><BODY></BODY></HTML>").to_html
-        )
+        actual = Nokogiri::HTML5::Inference.parse("<!doctype html><html><head></head><body></body></html>")
+
+        assert_kind_of(Nokogiri::HTML5::Document, actual)
+        assert_equal("<!DOCTYPE html><html><head></head><body></body></html>", actual.to_html)
+
+        actual = Nokogiri::HTML5::Inference.parse("<!DOCTYPE HTML><HTML><HEAD></HEAD><BODY></BODY></HTML>")
+
+        assert_kind_of(Nokogiri::HTML5::Document, actual)
+        assert_equal("<!DOCTYPE html><html><head></head><body></body></html>", actual.to_html)
       end
     end
 
     describe "passed a Document without doctype" do
       it "returns a Document" do
-        assert_equal(
-          "<html><head></head><body></body></html>",
-          Nokogiri::HTML5::Inference.parse("<html><head></head><body></body></html>").to_html
-        )
-        assert_equal(
-          "<html><head></head><body></body></html>",
-          Nokogiri::HTML5::Inference.parse("<HTML><HEAD></HEAD><BODY></BODY></HTML>").to_html
-        )
+        actual = Nokogiri::HTML5::Inference.parse("<html><head></head><body></body></html>")
+
+        assert_kind_of(Nokogiri::HTML5::Document, actual)
+        assert_equal("<html><head></head><body></body></html>", actual.to_html)
+
+        actual = Nokogiri::HTML5::Inference.parse("<HTML><HEAD></HEAD><BODY></BODY></HTML>")
+
+        assert_kind_of(Nokogiri::HTML5::Document, actual)
+        assert_equal("<html><head></head><body></body></html>", actual.to_html)
       end
     end
 
@@ -89,9 +91,10 @@ describe Nokogiri::HTML5::Inference do
       describe "passed a fragment requiring 'in #{context}' insertion mode" do
         fragments.each do |fragment|
           it "parses '#{fragment}' correctly" do
-            actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+            actual = Nokogiri::HTML5::Inference.parse(fragment)
 
-            assert_equal(fragment, actual)
+            assert_kind_of(Nokogiri::XML::NodeSet, actual)
+            assert_equal(fragment, actual.to_html)
           end
         end
       end
@@ -100,9 +103,10 @@ describe Nokogiri::HTML5::Inference do
     describe "passed a Fragment containing head and body" do
       it "returns a Fragment containing both head and body" do
         fragment = "<head></head><body></body>"
-        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+        actual = Nokogiri::HTML5::Inference.parse(fragment)
 
-        assert_equal(fragment, actual)
+        assert_kind_of(Nokogiri::XML::NodeSet, actual)
+        assert_equal(fragment, actual.to_html)
       end
     end
 
@@ -110,27 +114,30 @@ describe Nokogiri::HTML5::Inference do
       it "returns a Fragment containing both head and body" do
         fragment = "<head><p>"
         expected = "<head></head><body><p></p></body>"
-        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+        actual = Nokogiri::HTML5::Inference.parse(fragment)
 
-        assert_equal(expected, actual)
+        assert_kind_of(Nokogiri::XML::NodeSet, actual)
+        assert_equal(expected, actual.to_html)
       end
     end
 
     describe "multiple children" do
       it "parses correctly" do
         fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
-        actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
+        actual = Nokogiri::HTML5::Inference.parse(fragment)
 
-        assert_equal(fragment, actual)
+        assert_kind_of(Nokogiri::XML::NodeSet, actual)
+        assert_equal(fragment, actual.to_html)
       end
 
       describe "with pluck: false" do
         it "includes the additional sibling nodes created" do
           fragment = "<body><div>hello</div></body>"
           expected = "<head></head>#{fragment}"
-          actual = Nokogiri::HTML5::Inference.parse(fragment, pluck: false).to_html
+          actual = Nokogiri::HTML5::Inference.parse(fragment, pluck: false)
 
-          assert_equal(expected, actual)
+          assert_kind_of(Nokogiri::XML::NodeSet, actual)
+          assert_equal(expected, actual.to_html)
         end
       end
     end

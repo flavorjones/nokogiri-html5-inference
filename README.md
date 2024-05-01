@@ -2,22 +2,15 @@
 
 Given HTML5 input, make a reasonable guess at how to parse it correctly.
 
-`Nokogiri::HTML5::Inference` makes reasonable inferences that work for both HTML5 documents and HTML5
-fragments, and for all the different HTML5 tags that a web developer might need in a view library.
+`Nokogiri::HTML5::Inference` makes reasonable inferences that work for both HTML5 documents and HTML5 fragments, and for all the different HTML5 tags that a web developer might need in a view library.
 
 This is useful for parsing trusted content like view snippets, particularly for morphing cases like StimulusReflex.
 
 ## The problem this library solves
 
-The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise
-context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML
-without knowing the parent node -- also called the "context node" -- in which it will be inserted.
+The [HTML5 Spec](https://html.spec.whatwg.org/multipage/parsing.html) defines some very precise context-dependent parsing rules which can make it challenging to "just parse" a fragment of HTML without knowing the parent node -- also called the "context node" -- in which it will be inserted.
 
-Most content in an HTML5 document can be parsed assuming the parser's mode will be in the
-["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody),
-but there are some notable exceptions. Perhaps the most problematic to web developers are the
-table-related tags, which will not be parsed properly unless the parser is in the
-["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
+Most content in an HTML5 document can be parsed assuming the parser's mode will be in the ["in body" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody), but there are some notable exceptions. Perhaps the most problematic to web developers are the table-related tags, which will not be parsed properly unless the parser is in the ["in table" insertion mode](https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-intable).
 
 For example:
 
@@ -26,9 +19,7 @@ Nokogiri::HTML5::DocumentFragment.parse("<td>foo</td>").to_html
 # => "foo" # where did the tag go!?
 ```
 
-In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here",
-and drop the tag. This particular fragment must be parsed "in the context" of a table in order to
-parse properly.
+In the default "in body" mode, the parser will log an error, "Start tag 'td' isn't allowed here", and drop the tag. This particular fragment must be parsed "in the context" of a table in order to parse properly.
 
 Thankfully, libgumbo and Nokogiri allow us to set the context node:
 
@@ -41,9 +32,7 @@ Nokogiri::HTML5::DocumentFragment.new(
 # => "<tbody><tr><td>foo</td></tr></tbody>"
 ```
 
-This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be
-_intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
-the `<td>` tag must be wrapped in `<tbody><tr>` tags.
+This result is _almost_ correct, but we're seeing another HTML5 parsing rule in action: there may be _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case, the `<td>` tag must be wrapped in `<tbody><tr>` tags.
 
 We can fix this to only return the tags we provided by using the `<template>` tag as the context node, which the HTML5 spec provides exactly for this purpose:
 
@@ -103,19 +92,7 @@ Nokogiri::HTML5::Inference.parse(html)
 #      })
 ```
 
-If the input is a fragment that is parsed normally, you'll either get a `Nokogiri::HTML5::DocumentFragment` back:
-
-``` ruby
-Nokogiri::HTML5::Inference.parse("<div>hello,</div><div>world!</div>")
-# => #(DocumentFragment:0x34f8 {
-#      name = "#document-fragment",
-#      children = [
-#        #(Element:0x3624 { name = "div", children = [ #(Text "hello,")] }),
-#        #(Element:0x3804 { name = "div", children = [ #(Text "world!")] })]
-#      })
-```
-
-or, if there are intermediate parent tags that need to be removed, you'll get a `Nokogiri::XML::NodeSet`:
+If the input is a fragment, you'll get back a `Nokogiri::XML::NodeSet`:
 
 ``` ruby
 Nokogiri::HTML5::Inference.parse("<tr><td>hello</td><td>world!</td></tr>")
@@ -128,14 +105,12 @@ Nokogiri::HTML5::Inference.parse("<tr><td>hello</td><td>world!</td></tr>")
 #    ]
 ```
 
-All of these return types respond to the same query methods like `#css` and `#xpath`, tree-traversal
-methods like `#children`, and serialization methods like `#to_html`.
+Both of these return types respond to the same query methods like `#css` and `#xpath`, tree-traversal methods like `#children`, and serialization methods like `#to_html`.
 
 
 ## Caveats
 
-The implementation is currently pretty hacky and only looks at the first tag in the input to make
-decisions. Nonetheless, it is a step forward from what Nokogiri and libgumbo do out-of-the-box.
+The implementation is currently pretty hacky and only looks at the first tag in the input to make decisions. Nonetheless, it is a step forward from what Nokogiri and libgumbo do out-of-the-box.
 
 The implementation also is almost certainly incomplete, meaning there are HTML5 tags that aren't handled by this library as you might expect.
 
