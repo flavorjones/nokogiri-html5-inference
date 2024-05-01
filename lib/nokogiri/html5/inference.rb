@@ -106,9 +106,9 @@ else
           #
           #  [Keyword Parameters]
           #  - +pluck+ (Boolean) Default: +true+. Set to +false+ if you want the method to always
-          #    return <tt>DocumentFragment</tt>s as-parsed, without attempting to remove
-          #    intermediate parent nodes. This shouldn't be necessary if the library is working
-          #    properly, but may be useful to allow user to work around a bad guess.
+          #    return what Nokogiri parsed, without attempting to remove any sibling or intermediate
+          #    parent nodes. This shouldn't be necessary if the library is working properly, but may
+          #    be useful to allow user to work around a bad guess.
           #
           #  [Returns]
           #  - A +Nokogiri::HTML5::Document+ if the input appears to represent a full document.

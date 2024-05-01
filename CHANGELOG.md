@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+- Use a `<template>` tag as the context node for the majority of fragment parsing, which greatly simplifies this gem. #7 @flavorjones @stevecheckoway
+- Clean up the README. @marcoroth
+
+
 ## [0.2.0] - 2024-04-26
 
 - When a `<head>` tag is seen first in the input string, include the `<body>` tag in the returned fragment or node set. (#3, #4) @flavorjones
