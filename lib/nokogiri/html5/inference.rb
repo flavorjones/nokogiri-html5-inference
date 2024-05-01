@@ -48,14 +48,14 @@ else
       #  _intermediate parent tags_ that the HTML5 spec requires to be inserted by the parser. In this case,
       #  the `<td>` tag must be wrapped in `<tbody><tr>` tags.
       #
-      #  We can narrow down the result set with an XPath query to get back only the intended tags:
+      #  We can fix this to only return the tags we provided by using the `<template>` tag as the context node, which the HTML5 spec provides exactly for this purpose:
       #
       #  ``` ruby
       #  Nokogiri::HTML5::DocumentFragment.new(
       #    Nokogiri::HTML5::Document.new,
       #    "<td>foo</td>",
-      #    "table"  # this is the context node
-      #  ).xpath("tbody/tr/*").to_html
+      #    "template"  # <--- this is the context node
+      #  ).to_html
       #  # => "<td>foo</td>"
       #  ```
       #
@@ -65,35 +65,23 @@ else
       #  Nokogiri::HTML5::Inference.parse("<td>foo</td>").to_html
       #  # => "<td>foo</td>"
       #  ```
+      #
       module Inference
         # Tags that must be parsed in a specific HTML5 insertion mode, for which we must use a
         # context node.
         module ContextTags # :nodoc:
-          TABLE = %w[thead tbody tfoot tr td th col colgroup caption].freeze
           HTML = %w[head body].freeze
         end
 
         # Regular expressions used to determine if we need to use a context node.
         module ContextRegexp # :nodoc:
           DOCUMENT = /\A\s*(<!doctype\s+html\b|<html\b)/i
-          TABLE = /\A\s*<(#{ContextTags::TABLE.join("|")})\b/i
           HTML = /\A\s*<(#{ContextTags::HTML.join("|")})\b/i
-        end
-
-        # Tags that get an intermediate parent created for them according to the HTML5 spec.
-        module PluckTags # :nodoc:
-          TBODY = %w[tr].freeze
-          TBODY_TR = %w[td th].freeze
-          COLGROUP = %w[col].freeze
         end
 
         # Regular expressions used to determine if we will need to skip an intermediate parent or
         # otherwise narrow the fragment DOM that is returned.
         module PluckRegexp # :nodoc:
-          TBODY = /\A\s*<(#{PluckTags::TBODY.join("|")})\b/i
-          TBODY_TR = /\A\s*<(#{PluckTags::TBODY_TR.join("|")})\b/i
-          COLGROUP = /\A\s*<(#{PluckTags::COLGROUP.join("|")})\b/i
-          HTML_INNER = /\A\s*<(head)\b/i
           BODY_OUTER = /\A\s*<(body)\b/i
         end
 
@@ -158,9 +146,8 @@ else
           def context(input) # :nodoc:
             case input
             when ContextRegexp::DOCUMENT then nil
-            when ContextRegexp::TABLE then "table"
             when ContextRegexp::HTML then "html"
-            else "body"
+            else "template"
             end
           end
 
@@ -181,10 +168,6 @@ else
           #
           def pluck_path(input) # :nodoc:
             case input
-            when PluckRegexp::TBODY then "tbody/*"
-            when PluckRegexp::TBODY_TR then "tbody/tr/*"
-            when PluckRegexp::COLGROUP then "colgroup/*"
-            when PluckRegexp::HTML_INNER then "./*"
             when PluckRegexp::BODY_OUTER then "body"
             end
           end

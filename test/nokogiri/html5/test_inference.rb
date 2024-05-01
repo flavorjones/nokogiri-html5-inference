@@ -4,15 +4,13 @@ require "test_helper"
 
 describe Nokogiri::HTML5::Inference do
   fragment_actions = {
-    "body" => [
+    "template" => [
       "<div>hello</div>",
       "<div class=\"big\">hello</div>",
       "<li>hello</li>",
       "<dl><dd>hello</dd><dt>world</dt></dl>",
       "<dd>hello</dd><dt>world</dt>",
-      "just some text"
-    ],
-    "table" => [
+      "just some text",
       "<thead><tr><td>hello</td></tr></thead>",
       "<tbody><tr><td>hello</td></tr></tbody>",
       "<tfoot><tr><td>hello</td></tr></tfoot>",
@@ -118,7 +116,7 @@ describe Nokogiri::HTML5::Inference do
       end
     end
 
-    describe "multiple children that need plucking" do
+    describe "multiple children" do
       it "parses correctly" do
         fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
         actual = Nokogiri::HTML5::Inference.parse(fragment).to_html
@@ -127,9 +125,9 @@ describe Nokogiri::HTML5::Inference do
       end
 
       describe "with pluck: false" do
-        it "includes the intermediate nodes created" do
-          fragment = "<tr><td>hello</td></tr><tr><td>world</td></tr>"
-          expected = "<tbody>#{fragment}</tbody>"
+        it "includes the additional sibling nodes created" do
+          fragment = "<body><div>hello</div></body>"
+          expected = "<head></head>#{fragment}"
           actual = Nokogiri::HTML5::Inference.parse(fragment, pluck: false).to_html
 
           assert_equal(expected, actual)
